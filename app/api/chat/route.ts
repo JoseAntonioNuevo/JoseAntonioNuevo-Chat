@@ -27,6 +27,7 @@ function createSearchKbTool(tenant: string) {
       try {
         // Use the environment variable for internal API calls (Edge -> Node)
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+        console.log('DEBUG - RAG search tool:', { baseUrl, query, tenant });
 
         const response = await fetch(`${baseUrl}/api/rag/search`, {
           method: 'POST',
@@ -61,6 +62,11 @@ function createSearchKbTool(tenant: string) {
         };
       } catch (error) {
         console.error('Tool execution error:', error);
+        console.error('Error details:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          name: error instanceof Error ? error.name : undefined,
+        });
         return {
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error',
