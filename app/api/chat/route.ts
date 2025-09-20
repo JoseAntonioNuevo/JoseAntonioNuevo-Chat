@@ -50,6 +50,9 @@ export async function POST(request: NextRequest) {
     console.log('DEBUG - Received request body:', JSON.stringify(body, null, 2));
     
     const { messages } = body;
+    type BasePart = { type: string } & Record<string, unknown>;
+    type TextUIPart = { type: 'text'; text: string };
+    const isTextPart = (p: BasePart): p is TextUIPart => p.type === 'text' && typeof (p as { text?: unknown }).text === 'string';
     // Use provided values when available
     const tenant: string = body.tenant || 'jose';
     const sessionId: string = body.sessionId || crypto.randomUUID();
@@ -166,10 +169,12 @@ Session ID: ${sessionId}`;
       }
 
       // Extract text from last user message
-      const lastUser = [...messages].reverse().find((m: any) => m.role === 'user');
+      const uiMessages = messages as Array<{ role: 'user' | 'assistant' | 'system'; parts?: unknown; content?: unknown }>;
+      const lastUser = [...uiMessages].reverse().find((m) => m.role === 'user');
       let userText = '';
-      if (lastUser?.parts && Array.isArray(lastUser.parts)) {
-        for (const p of lastUser.parts) if (p?.type === 'text') userText += p.text ?? '';
+      if (lastUser?.parts && Array.isArray(lastUser.parts as unknown[])) {
+        const parts = lastUser.parts as unknown as BasePart[];
+        for (const p of parts) if (isTextPart(p)) userText += p.text;
       } else if (typeof lastUser?.content === 'string') {
         userText = lastUser.content;
       }
@@ -233,8 +238,9 @@ Session ID: ${sessionId}`;
             .single();
           if (!conv) return;
           let assistantText = '';
-          if (responseMessage?.parts && Array.isArray(responseMessage.parts)) {
-            for (const p of responseMessage.parts) if (p?.type === 'text') assistantText += p.text ?? '';
+          if (responseMessage?.parts && Array.isArray(responseMessage.parts as unknown[])) {
+            const parts = responseMessage.parts as unknown as BasePart[];
+            for (const p of parts) if (isTextPart(p)) assistantText += p.text;
           }
           if (assistantText) {
             await supabase.from('messages').insert({

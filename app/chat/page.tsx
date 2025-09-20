@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
 import ReactMarkdown from "react-markdown";
@@ -34,17 +34,19 @@ export default function ChatPage() {
     );
   };
 
-  const renderTextParts = (parts: any[]) => {
-    return parts
-      .filter((p) => p.type === "text")
-      .map((p, i) => <span key={`text-${i}`}>{p.text ?? ""}</span>);
-  };
-
   // Intentionally do not render tool parts to users.
+  type BasePart = { type: string } & Record<string, unknown>;
+  type ReasoningUIPart = { type: "reasoning"; text: string };
+  type SourceUrlUIPart = { type: "source-url"; url: string; title?: string };
+  type SourceDocumentUIPart = { type: "source-document"; title: string; filename?: string };
 
-  const renderReasoningParts = (parts: any[]) => {
+  const isReasoning = (p: BasePart): p is ReasoningUIPart => p.type === "reasoning" && typeof (p as { text?: unknown }).text === "string";
+  const isSourceUrl = (p: BasePart): p is SourceUrlUIPart => p.type === "source-url" && typeof (p as { url?: unknown }).url === "string";
+  const isSourceDoc = (p: BasePart): p is SourceDocumentUIPart => p.type === "source-document" && typeof (p as { title?: unknown }).title === "string";
+
+  const renderReasoningParts = (parts: BasePart[]) => {
     return parts
-      .filter((p) => p.type === "reasoning")
+      .filter(isReasoning)
       .map((p, i) => (
         <div
           key={`reason-${i}`}
@@ -64,15 +66,15 @@ export default function ChatPage() {
       ));
   };
 
-  const renderSourceParts = (parts: any[]) => {
+  const renderSourceParts = (parts: BasePart[]) => {
     return parts
-      .filter((p) => p.type === "source-url" || p.type === "source-document")
+      .filter((p) => isSourceUrl(p) || isSourceDoc(p))
       .map((p, i) => (
         <div
           key={`src-${i}`}
           style={{ marginTop: "0.5rem", fontSize: "0.85rem", color: "#555" }}
         >
-          {p.type === "source-url" ? (
+          {isSourceUrl(p) ? (
             <span>
               Source:{" "}
               <a href={p.url} target="_blank" rel="noreferrer">
@@ -82,7 +84,7 @@ export default function ChatPage() {
           ) : (
             <span>
               Source: {p.title}
-              {p.filename ? ` (${p.filename})` : ""}
+              {isSourceDoc(p) && p.filename ? ` (${p.filename})` : ""}
             </span>
           )}
         </div>
@@ -198,8 +200,10 @@ export default function ChatPage() {
                 <div style={{ whiteSpace: "pre-wrap" }}>
                   {/* Render assistant/user text as Markdown */}
                   {(() => {
-                    const txt = (message.parts as any[])
-                      .filter((p) => p.type === "text")
+                    type TextUIPart = { type: "text"; text?: string };
+                    const parts = (message.parts as unknown as BasePart[]) || [];
+                    const txt = parts
+                      .filter((p): p is TextUIPart => p.type === "text")
                       .map((p) => p.text ?? "")
                       .join("");
                     return txt ? (
@@ -212,9 +216,9 @@ export default function ChatPage() {
                   })()}
                   {/* Optional reasoning/sources for assistant */}
                   {message.role !== "user" &&
-                    renderReasoningParts(message.parts as any[])}
+                    renderReasoningParts((message.parts as unknown as BasePart[]) || [])}
                   {message.role !== "user" &&
-                    renderSourceParts(message.parts as any[])}
+                    renderSourceParts((message.parts as unknown as BasePart[]) || [])}
                 </div>
               </div>
             </div>

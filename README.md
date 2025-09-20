@@ -1,6 +1,6 @@
 # JA Chatbot - Multi-Site AI Chatbot Microservice
 
-A production-ready Next.js 14/15 chatbot microservice with streaming responses, tool calling, and RAG (Retrieval-Augmented Generation) capabilities powered by Supabase pgvector.
+A production-ready Next.js 15 chatbot microservice with streaming responses, tool calling, and RAG (Retrieval-Augmented Generation) capabilities powered by Supabase pgvector.
 
 ## Features
 
@@ -46,12 +46,14 @@ cp .env.example .env.local
 ```
 
 Required variables:
+
 - `OPENAI_API_KEY`: Your OpenAI API key
 - `SUPABASE_URL`: Your Supabase project URL
 - `SUPABASE_ANON_KEY`: Supabase anon/public key
 - `SUPABASE_SERVICE_ROLE`: Supabase service role key (keep secret!)
 
 Optional for rate limiting:
+
 - `UPSTASH_REDIS_REST_URL`: Upstash Redis REST URL
 - `UPSTASH_REDIS_REST_TOKEN`: Upstash Redis REST token
 
@@ -83,6 +85,7 @@ pnpm dev
 ```
 
 Visit:
+
 - Chat UI: http://localhost:3000/chat
 - API endpoints:
   - `/api/chat` - Streaming chat with tool calling (Edge)
@@ -99,6 +102,7 @@ To embed the chatbot on any website:
 ```
 
 For local testing:
+
 ```html
 <script src="http://localhost:3000/ja-chatbot.js" defer></script>
 <ja-chatbot tenant="jose" api-url="http://localhost:3000/api/chat"></ja-chatbot>
@@ -128,9 +132,11 @@ ja-chatbot/
 ## API Endpoints
 
 ### POST /api/chat
+
 Streaming chat endpoint with tool calling capabilities.
 
 **Request Body:**
+
 ```json
 {
   "messages": [
@@ -142,13 +148,16 @@ Streaming chat endpoint with tool calling capabilities.
 ```
 
 **Response:**
+
 - Default: UI Message Stream (for `@ai-sdk/react` `useChat`)
 - If header `X-Stream-Protocol: text` is present: plain text stream (for the widget)
 
 ### POST /api/rag/search
+
 Vector similarity search in knowledge base.
 
 **Request Body:**
+
 ```json
 {
   "query": "portfolio projects",
@@ -157,6 +166,7 @@ Vector similarity search in knowledge base.
 ```
 
 **Response:**
+
 ```json
 {
   "results": [
@@ -178,8 +188,8 @@ Edit tenant allowlists in `/app/api/chat/route.ts`:
 
 ```typescript
 const ALLOWED_ORIGINS: Record<string, string[]> = {
-  jose: ['http://localhost:3000', 'https://jose.com'],
-  acme: ['https://acme.com', 'https://app.acme.com'],
+  jose: ["http://localhost:3000", "https://jose.com"],
+  acme: ["https://acme.com", "https://app.acme.com"],
   // Add more tenants...
 };
 ```
@@ -195,15 +205,6 @@ To enable rate limiting:
 ### Custom System Prompts
 
 Modify the system prompt in `/app/api/chat/route.ts` to customize AI behavior per tenant.
-
-## Production Deployment
-
-### Vercel (Recommended)
-
-1. Push to GitHub
-2. Import to Vercel
-3. Add environment variables
-4. Deploy
 
 ### Security Checklist
 
@@ -227,15 +228,19 @@ pnpm ingest     # Ingest documents to knowledge base
 ## Troubleshooting
 
 ### "Missing Supabase environment variables"
+
 Ensure all required environment variables are set in `.env.local`
 
 ### "Rate limit not working"
+
 Check that Upstash credentials are correct and uncomment rate limiting code
 
 ### "Search returns no results"
+
 Run `pnpm ingest` to populate the knowledge base
 
 ### "CORS errors on widget"
+
 Add your domain to `ALLOWED_ORIGINS` in `/app/api/chat/route.ts`
 
 ## TODOs
