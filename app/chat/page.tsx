@@ -99,8 +99,8 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="max-w-[900px] mx-auto p-5 font-sans">
-      <div className="chat-header text-center mb-8 p-4">
+    <div className="max-w-6xl mx-auto px-3 py-2 font-sans min-h-screen flex flex-col">
+      <div className="chat-header text-center mb-4 p-2">
         <h1 className="text-[2rem] font-bold mb-2 bg-gradient-to-br from-primary-dark to-primary bg-clip-text text-transparent">
           José Antonio Nuevo Chatbot
         </h1>
@@ -116,7 +116,7 @@ export default function ChatPage() {
       )}
       <div
         ref={listRef}
-        className="min-h-[60vh] max-h-[70vh] overflow-y-auto border border-border-primary rounded-[14px] p-4 mb-4 bg-gradient-to-b from-bg-card to-[rgba(26,21,50,.75)] backdrop-blur-md"
+        className="flex-1 min-h-0 overflow-y-auto border border-border-primary rounded-[14px] p-3 mb-3 bg-gradient-to-b from-bg-card to-[rgba(26,21,50,.75)] backdrop-blur-md"
       >
         {chat.messages.length === 0 ? (
           <p className="text-text-secondary text-center">
@@ -126,12 +126,12 @@ export default function ChatPage() {
           chat.messages.map((message) => (
             <div
               key={message.id}
-              className={`flex mb-[0.85rem] gap-[0.6rem] ${
+              className={`flex mb-3 gap-2 ${
                 message.role === "user" ? "justify-end" : "justify-start"
               }`}
             >
               <div
-                className={`max-w-[80%] py-3 px-[0.9rem] ${
+                className={`max-w-[85%] py-2.5 px-3 ${
                   message.role === "user"
                     ? "rounded-[14px_14px_4px_14px] bg-gradient-to-br from-primary-dark to-primary border border-primary text-text-primary shadow-[0_6px_18px_rgba(124,58,237,0.25)]"
                     : "rounded-[14px_14px_14px_4px] bg-bg-card-dark border border-border-primary text-text-primary shadow-[0_6px_18px_rgba(0,0,0,0.25)]"
@@ -173,7 +173,7 @@ export default function ChatPage() {
       </div>
       <form
         onSubmit={handleSubmit}
-        className="flex gap-[0.6rem] items-center bg-[rgba(18,10,35,0.6)] border border-border-primary p-[0.6rem] rounded-[14px] backdrop-blur-md"
+        className="flex gap-2 items-center bg-[rgba(18,10,35,0.6)] border border-border-primary p-2 rounded-[14px] backdrop-blur-md"
       >
         <input
           type="text"
@@ -181,7 +181,7 @@ export default function ChatPage() {
           onChange={(e) => setInput(e.target.value)}
           placeholder="Type your message here..."
           disabled={chat.status === "submitted" || chat.status === "streaming"}
-          className="flex-1 py-[0.85rem] px-4 rounded-[12px] border border-border-light bg-bg-input text-text-primary text-base outline-none disabled:opacity-50"
+          className="flex-1 py-3 px-3 rounded-[12px] border border-border-light bg-bg-input text-text-primary text-base outline-none disabled:opacity-50"
         />
         <button
           type="submit"
@@ -190,7 +190,7 @@ export default function ChatPage() {
             chat.status === "streaming" ||
             !input.trim()
           }
-          className={`py-[0.85rem] px-5 rounded-[12px] border font-bold text-[0.95rem] text-white cursor-pointer transition-all ${
+          className={`py-3 px-4 rounded-[12px] border font-bold text-[0.95rem] text-white cursor-pointer transition-all ${
             chat.status === "submitted" ||
             chat.status === "streaming" ||
             !input.trim()
@@ -206,7 +206,7 @@ export default function ChatPage() {
           <button
             type="button"
             onClick={() => chat.stop()}
-            className="py-[0.85rem] px-[1.1rem] rounded-[12px] border border-border-light bg-bg-input text-text-primary font-bold"
+            className="py-3 px-4 rounded-[12px] border border-border-light bg-bg-input text-text-primary font-bold"
           >
             Stop
           </button>
