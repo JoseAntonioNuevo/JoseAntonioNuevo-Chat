@@ -8,8 +8,8 @@ import { supabaseServer } from '@/lib/supabase';
 // Uncomment to enable rate limiting:
 // import { checkRateLimit } from '@/lib/ratelimit';
 
-// Use Edge runtime for reliable streaming in production
-export const runtime = 'edge';
+// Use Node runtime here for local/dev; Netlify production uses its Edge Function.
+export const runtime = 'nodejs';
 
 // CORS allowlist per tenant (placeholder)
 const ALLOWED_ORIGINS: Record<string, string[]> = {

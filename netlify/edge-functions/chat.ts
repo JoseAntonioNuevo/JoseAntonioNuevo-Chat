@@ -2,8 +2,8 @@
 // Streams using the Vercel AI SDK v5 UI message stream protocol.
 // This avoids buffering in Netlify’s serverless functions.
 
-import { streamText, tool, convertToCoreMessages, stepCountIs } from 'ai';
-import { openai } from '@ai-sdk/openai';
+import { streamText, tool, convertToCoreMessages, stepCountIs, embed } from 'ai';
+import { openai as createOpenAI } from '@ai-sdk/openai';
 import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
 
@@ -23,14 +23,24 @@ const ALLOWED_ORIGINS: Record<string, string[]> = {
   ],
 };
 
+function getEnv(key: string): string | undefined {
+  // Works both in Netlify Edge (Deno) and during Next type-check/build (Node)
+  const denoEnv = (globalThis as any)?.Deno?.env;
+  const fromDeno = typeof denoEnv?.get === 'function' ? denoEnv.get(key) : undefined;
+  return fromDeno ?? (process as any)?.env?.[key];
+}
+
 function supabaseEdge() {
-  const url = Deno.env.get('SUPABASE_URL');
-  const serviceRole = Deno.env.get('SUPABASE_SERVICE_ROLE');
+  const url = getEnv('SUPABASE_URL');
+  const serviceRole = getEnv('SUPABASE_SERVICE_ROLE');
   if (!url || !serviceRole) throw new Error('Missing Supabase env vars');
   return createClient(url, serviceRole, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
+
+// Initialize OpenAI provider explicitly with API key for Edge runtime
+const oai = createOpenAI({ apiKey: getEnv('OPENAI_API_KEY') || '' });
 
 async function searchKb({
   query,
@@ -42,8 +52,8 @@ async function searchKb({
   matchCount?: number;
 }): Promise<KbSearchResult[]> {
   // embed query with OpenAI
-  const { embedding } = await (await import('ai')).embed({
-    model: openai.textEmbeddingModel('text-embedding-3-small'),
+  const { embedding } = await embed({
+    model: oai.textEmbeddingModel('text-embedding-3-small'),
     value: query,
   });
   const supabase = supabaseEdge();
@@ -186,7 +196,7 @@ Session ID: ${sessionId}`;
 
     // Stream model response
     const result = await streamText({
-      model: openai(Deno.env.get('OPENAI_MODEL') ?? 'gpt-4o-mini'),
+      model: oai(getEnv('OPENAI_MODEL') ?? 'gpt-4o-mini'),
       system: systemPrompt,
       messages: coreMessages,
       toolChoice: 'auto',
@@ -240,4 +250,3 @@ Session ID: ${sessionId}`;
     );
   }
 }
-
