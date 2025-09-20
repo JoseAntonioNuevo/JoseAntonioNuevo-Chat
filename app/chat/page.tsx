@@ -50,16 +50,7 @@ export default function ChatPage() {
       .map((p, i) => (
         <div
           key={`reason-${i}`}
-          style={{
-            padding: "0.5rem",
-            backgroundColor: "#fffaf0",
-            border: "1px dashed #f0d9a6",
-            color: "#6a591f",
-            borderRadius: "6px",
-            marginTop: "0.5rem",
-            fontSize: "0.9rem",
-            whiteSpace: "pre-wrap",
-          }}
+          className="p-2 bg-[#fffaf0] border border-dashed border-[#f0d9a6] text-[#6a591f] rounded-md mt-2 text-sm whitespace-pre-wrap"
         >
           {p.text}
         </div>
@@ -72,12 +63,12 @@ export default function ChatPage() {
       .map((p, i) => (
         <div
           key={`src-${i}`}
-          style={{ marginTop: "0.5rem", fontSize: "0.85rem", color: "#555" }}
+          className="mt-2 text-[0.85rem] text-gray-600"
         >
           {isSourceUrl(p) ? (
             <span>
               Source:{" "}
-              <a href={p.url} target="_blank" rel="noreferrer">
+              <a href={p.url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
                 {p.title || p.url}
               </a>
             </span>
@@ -101,103 +92,52 @@ export default function ChatPage() {
 
   if (!isReady) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "100vh",
-          fontFamily: "system-ui, -apple-system, sans-serif",
-        }}
-      >
+      <div className="flex justify-center items-center min-h-screen font-sans">
         <p>Initializing chat session...</p>
       </div>
     );
   }
 
   return (
-    <div
-      style={{
-        maxWidth: "900px",
-        margin: "0 auto",
-        padding: "1.25rem",
-        fontFamily: "system-ui, -apple-system, sans-serif",
-      }}
-    >
-      <div className="chat-header">
-        <h1>José Antonio Nuevo Chatbot</h1>
-        <p>Ask me anything about me or my work!</p>
+    <div className="max-w-[900px] mx-auto p-5 font-sans">
+      <div className="chat-header text-center mb-8 p-4">
+        <h1 className="text-[2rem] font-bold mb-2 bg-gradient-to-br from-primary-dark to-primary bg-clip-text text-transparent">
+          José Antonio Nuevo Chatbot
+        </h1>
+        <p className="text-lg text-text-secondary m-0 opacity-90">
+          Ask me anything about me or my work!
+        </p>
       </div>
 
       {chat.error && (
-        <div
-          style={{
-            padding: "0.75rem 1rem",
-            backgroundColor: "#431f3f",
-            border: "1px solid #773466",
-            borderRadius: "10px",
-            marginBottom: "1rem",
-            color: "#ffd1dc",
-          }}
-        >
+        <div className="py-3 px-4 bg-[#431f3f] border border-[#773466] rounded-[10px] mb-4 text-[#ffd1dc]">
           Error: {chat.error.message}
         </div>
       )}
       <div
         ref={listRef}
-        style={{
-          minHeight: "60vh",
-          maxHeight: "70vh",
-          overflowY: "auto",
-          border: "1px solid #2a2352",
-          borderRadius: "14px",
-          padding: "1rem",
-          marginBottom: "1rem",
-          background:
-            "linear-gradient(180deg, rgba(30,24,60,.75), rgba(26,21,50,.75))",
-          backdropFilter: "blur(6px)",
-        }}
+        className="min-h-[60vh] max-h-[70vh] overflow-y-auto border border-border-primary rounded-[14px] p-4 mb-4 bg-gradient-to-b from-bg-card to-[rgba(26,21,50,.75)] backdrop-blur-md"
       >
         {chat.messages.length === 0 ? (
-          <p style={{ color: "#b8aef0", textAlign: "center" }}>
+          <p className="text-text-secondary text-center">
             Start a conversation…
           </p>
         ) : (
           chat.messages.map((message) => (
             <div
               key={message.id}
-              style={{
-                display: "flex",
-                marginBottom: "0.85rem",
-                gap: "0.6rem",
-                justifyContent:
-                  message.role === "user" ? "flex-end" : "flex-start",
-              }}
+              className={`flex mb-[0.85rem] gap-[0.6rem] ${
+                message.role === "user" ? "justify-end" : "justify-start"
+              }`}
             >
               <div
-                style={{
-                  maxWidth: "80%",
-                  padding: "0.75rem 0.9rem",
-                  borderRadius:
-                    message.role === "user"
-                      ? "14px 14px 4px 14px"
-                      : "14px 14px 14px 4px",
-                  background:
-                    message.role === "user"
-                      ? "linear-gradient(135deg, #6d28d9, #7c3aed)"
-                      : "#1f1940",
-                  border:
-                    message.role === "user"
-                      ? "1px solid #7c3aed"
-                      : "1px solid #2a2352",
-                  color: "#eae6ff",
-                  boxShadow:
-                    message.role === "user"
-                      ? "0 6px 18px rgba(124, 58, 237, 0.25)"
-                      : "0 6px 18px rgba(0, 0, 0, 0.25)",
-                }}
+                className={`max-w-[80%] py-3 px-[0.9rem] ${
+                  message.role === "user"
+                    ? "rounded-[14px_14px_4px_14px] bg-gradient-to-br from-primary-dark to-primary border border-primary text-text-primary shadow-[0_6px_18px_rgba(124,58,237,0.25)]"
+                    : "rounded-[14px_14px_14px_4px] bg-bg-card-dark border border-border-primary text-text-primary shadow-[0_6px_18px_rgba(0,0,0,0.25)]"
+                }`}
               >
-                <div style={{ whiteSpace: "pre-wrap" }}>
+                <div className="whitespace-pre-wrap">
                   {/* Render assistant/user text as Markdown */}
                   {(() => {
                     type TextUIPart = { type: "text"; text?: string };
@@ -226,29 +166,14 @@ export default function ChatPage() {
         )}
 
         {chat.status === "submitted" || chat.status === "streaming" ? (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              paddingTop: "0.25rem",
-            }}
-          >
-            <div className="pulse" />
+          <div className="flex justify-center pt-1">
+            <div className="pulse w-9 h-[10px] rounded-lg bg-gradient-to-r from-primary-dark to-primary animate-pulse" />
           </div>
         ) : null}
       </div>
       <form
         onSubmit={handleSubmit}
-        style={{
-          display: "flex",
-          gap: "0.6rem",
-          alignItems: "center",
-          background: "rgba(18, 10, 35, 0.6)",
-          border: "1px solid #2a2352",
-          padding: "0.6rem",
-          borderRadius: "14px",
-          backdropFilter: "blur(6px)",
-        }}
+        className="flex gap-[0.6rem] items-center bg-[rgba(18,10,35,0.6)] border border-border-primary p-[0.6rem] rounded-[14px] backdrop-blur-md"
       >
         <input
           type="text"
@@ -256,16 +181,7 @@ export default function ChatPage() {
           onChange={(e) => setInput(e.target.value)}
           placeholder="Type your message here..."
           disabled={chat.status === "submitted" || chat.status === "streaming"}
-          style={{
-            flex: 1,
-            padding: "0.85rem 1rem",
-            borderRadius: "12px",
-            border: "1px solid #3a2e6e",
-            background: "#1a1433",
-            color: "#e6e1ff",
-            fontSize: "1rem",
-            outline: "none",
-          }}
+          className="flex-1 py-[0.85rem] px-4 rounded-[12px] border border-border-light bg-bg-input text-text-primary text-base outline-none disabled:opacity-50"
         />
         <button
           type="submit"
@@ -274,32 +190,13 @@ export default function ChatPage() {
             chat.status === "streaming" ||
             !input.trim()
           }
-          style={{
-            padding: "0.85rem 1.25rem",
-            borderRadius: "12px",
-            border: "1px solid #7c3aed",
-            background:
-              chat.status === "submitted" ||
-              chat.status === "streaming" ||
-              !input.trim()
-                ? "#3a2e6e"
-                : "linear-gradient(135deg, #6d28d9, #7c3aed)",
-            color: "#fff",
-            fontWeight: 700,
-            cursor:
-              chat.status === "submitted" ||
-              chat.status === "streaming" ||
-              !input.trim()
-                ? "not-allowed"
-                : "pointer",
-            fontSize: "0.95rem",
-            boxShadow:
-              chat.status === "submitted" ||
-              chat.status === "streaming" ||
-              !input.trim()
-                ? "none"
-                : "0 6px 18px rgba(124, 58, 237, 0.35)",
-          }}
+          className={`py-[0.85rem] px-5 rounded-[12px] border font-bold text-[0.95rem] text-white cursor-pointer transition-all ${
+            chat.status === "submitted" ||
+            chat.status === "streaming" ||
+            !input.trim()
+              ? "bg-border-light border-border-light cursor-not-allowed"
+              : "bg-gradient-to-br from-primary-dark to-primary border-primary shadow-[0_6px_18px_rgba(124,58,237,0.35)] hover:shadow-[0_8px_20px_rgba(124,58,237,0.45)]"
+          }`}
         >
           {chat.status === "submitted" || chat.status === "streaming"
             ? "Sending..."
@@ -309,45 +206,14 @@ export default function ChatPage() {
           <button
             type="button"
             onClick={() => chat.stop()}
-            style={{
-              padding: "0.85rem 1.1rem",
-              borderRadius: "12px",
-              border: "1px solid #3a2e6e",
-              backgroundColor: "#1a1433",
-              color: "#e6e1ff",
-              fontWeight: 700,
-            }}
+            className="py-[0.85rem] px-[1.1rem] rounded-[12px] border border-border-light bg-bg-input text-text-primary font-bold"
           >
             Stop
           </button>
         )}
       </form>
       <style jsx>{`
-        .chat-header {
-          text-align: center;
-          margin-bottom: 2rem;
-          padding: 1rem;
-        }
-        .chat-header h1 {
-          font-size: 2rem;
-          font-weight: 700;
-          margin: 0 0 0.5rem 0;
-          background: linear-gradient(135deg, #6d28d9, #7c3aed);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-        .chat-header p {
-          font-size: 1.1rem;
-          color: #b8aef0;
-          margin: 0;
-          opacity: 0.9;
-        }
         .pulse {
-          width: 36px;
-          height: 10px;
-          border-radius: 8px;
-          background: linear-gradient(90deg, #6d28d9, #7c3aed);
           filter: drop-shadow(0 0 14px rgba(124, 58, 237, 0.6));
           animation: pulse 1.3s ease-in-out infinite;
         }
@@ -380,7 +246,6 @@ export default function ChatPage() {
         .markdown-body :global(p) {
           margin: 0.3rem 0;
         }
-        /* Tighten list spacing */
         .markdown-body :global(ul),
         .markdown-body :global(ol) {
           margin: 0.2rem 0;
