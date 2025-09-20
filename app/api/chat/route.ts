@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { openai } from '@ai-sdk/openai';
-import { streamText, tool } from 'ai';
+import { streamText, tool, convertToCoreMessages } from 'ai';
 import { z } from 'zod';
 import type { KbSearchResult } from '@/lib/supabase';
 // Uncomment to enable rate limiting:
@@ -76,7 +76,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('DEBUG - Received request body:', JSON.stringify(body, null, 2));
     
-    const { messages, tenant, sessionId } = body;
+    const { messages } = body;
+    // Use default values for tenant and sessionId
+    const tenant = 'jose';
+    const sessionId = body.sessionId || crypto.randomUUID();
 
     // Validate required parameters
     console.log('DEBUG - Parameters check:', { 
@@ -167,20 +170,16 @@ Remember: You must ALWAYS respond with actual content after using tools. Never s
 Tenant context: ${tenant}
 Session ID: ${sessionId}`;
 
+    // Convert UI messages from the client to core model messages for the AI call
+    const coreMessages = convertToCoreMessages(messages);
+
     // Stream the AI response with tool calling
     const result = await streamText({
       model: openai(process.env.OPENAI_MODEL || 'gpt-4o-mini'),
       system: systemPrompt,
-      messages,
+      messages: coreMessages,
       tools: {
         search_kb: createSearchKbTool(tenant),
-      },
-      maxToolRoundtrips: 2, // Allow the AI to continue after tool execution
-      toolChoice: 'auto', // Let AI decide when to use tools
-      providerOptions: {
-        openai: {
-          user: sessionId, // Track usage per session
-        },
       },
     });
 
@@ -203,6 +202,10 @@ Session ID: ${sessionId}`;
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, X-Stream-Protocol',
       },
+      // Provide original UI messages so the client can maintain continuity
+      originalMessages: messages,
+      // Attach minimal message metadata (optional)
+      messageMetadata: () => ({ sessionId, tenant }),
     });
 
   } catch (error) {
