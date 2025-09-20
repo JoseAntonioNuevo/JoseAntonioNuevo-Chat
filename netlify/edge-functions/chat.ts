@@ -3,7 +3,7 @@
 // This avoids buffering in Netlify’s serverless functions.
 
 import { streamText, tool, convertToCoreMessages, stepCountIs, embed } from 'ai';
-import { openai as createOpenAI } from '@ai-sdk/openai';
+import { createOpenAI } from '@ai-sdk/openai';
 import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
 
