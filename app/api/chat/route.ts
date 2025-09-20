@@ -1,8 +1,9 @@
 import { NextRequest } from 'next/server';
 import { openai } from '@ai-sdk/openai';
-import { streamText, tool, convertToCoreMessages } from 'ai';
+import { streamText, tool, convertToCoreMessages, stepCountIs } from 'ai';
 import { z } from 'zod';
 import type { KbSearchResult } from '@/lib/supabase';
+import { searchKb } from '@/lib/rag';
 import { supabaseServer } from '@/lib/supabase';
 // Uncomment to enable rate limiting:
 // import { checkRateLimit } from '@/lib/ratelimit';
@@ -26,46 +27,17 @@ function createSearchKbTool(tenant: string) {
     }),
     execute: async ({ query }) => {
       try {
-        // Use the environment variable for internal API calls (Edge -> Node)
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-
-        const response = await fetch(`${baseUrl}/api/rag/search`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ query, tenant }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`RAG search failed: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-
-        if (data.results && data.results.length > 0) {
-          const formattedResults = (data.results as KbSearchResult[])
+        const results = (await searchKb({ query, tenant, matchCount: 5 })) as KbSearchResult[];
+        if (results.length > 0) {
+          const formattedResults = results
             .map((r: KbSearchResult) => `[${r.title || 'Document'}] (Relevance: ${(r.similarity * 100).toFixed(1)}%)\n${r.content}`)
             .join('\n\n---\n\n');
-
-          return {
-            success: true,
-            results: data.results,
-            formatted: formattedResults,
-          };
+          return { success: true, results, formatted: formattedResults } as const;
         }
-
-        return {
-          success: true,
-          results: [],
-          formatted: 'No relevant documents found in the knowledge base.',
-        };
+        return { success: true, results: [], formatted: 'No relevant documents found in the knowledge base.' } as const;
       } catch (error) {
         console.error('Tool execution error:', error);
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        };
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' } as const;
       }
     },
   });
@@ -217,6 +189,9 @@ Session ID: ${sessionId}`;
       model: openai(process.env.OPENAI_MODEL || 'gpt-4o-mini'),
       system: systemPrompt,
       messages: coreMessages,
+      toolChoice: 'auto',
+      // Do not stop right after tool results; allow a follow-up step for synthesis
+      stopWhen: stepCountIs(2),
       tools: {
         search_kb: createSearchKbTool(tenant),
       },
@@ -245,6 +220,8 @@ Session ID: ${sessionId}`;
       originalMessages: messages,
       // Attach minimal message metadata (optional)
       messageMetadata: () => ({ sessionId, tenant }),
+      // stream reasoning parts as well
+      sendReasoning: true,
       onFinish: async ({ responseMessage }) => {
         try {
           const supabase = supabaseServer();

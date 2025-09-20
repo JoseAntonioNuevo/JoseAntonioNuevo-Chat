@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useChat } from '@ai-sdk/react';
 import type { UIMessage } from 'ai';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function ChatPage() {
   const [sessionId, setSessionId] = useState<string>('');
@@ -40,81 +42,7 @@ export default function ChatPage() {
       ));
   };
 
-  const renderToolParts = (parts: any[]) => {
-    return parts
-      .filter((p) => p.type === 'dynamic-tool' || p.type.startsWith('tool-'))
-      .map((p, i) => {
-        if (p.type === 'dynamic-tool') {
-          if (p.toolName === 'search_kb' && p.state === 'output-available') {
-            const out = p.output ?? {};
-            const results = Array.isArray(out?.results) ? out.results : [];
-            const formatted = typeof out?.formatted === 'string' ? out.formatted : '';
-            return (
-              <div key={`tool-${i}`} style={{ padding: '0.75rem', backgroundColor: '#eef7ff', borderRadius: '6px', marginTop: '0.75rem', border: '1px solid #cfe8ff' }}>
-                <strong>🔎 Knowledge Base Results</strong>
-                {results.length > 0 ? (
-                  <ul style={{ marginTop: '0.5rem', paddingLeft: '1rem' }}>
-                    {results.map((r: any, idx: number) => (
-                      <li key={idx} style={{ marginBottom: '0.5rem' }}>
-                        <div style={{ fontWeight: 600 }}>{r.title || 'Document'}</div>
-                        {'similarity' in r && (
-                          <div style={{ fontSize: '0.8rem', color: '#555' }}>Relevance: {((r.similarity || 0) * 100).toFixed(1)}%</div>
-                        )}
-                        {r.content && (
-                          <div style={{ fontSize: '0.9rem', color: '#333', marginTop: '0.25rem', whiteSpace: 'pre-wrap' }}>
-                            {String(r.content).slice(0, 500)}{String(r.content).length > 500 ? '…' : ''}
-                          </div>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div style={{ marginTop: '0.5rem' }}>No relevant documents found.</div>
-                )}
-                {formatted && (
-                  <details style={{ marginTop: '0.5rem' }}>
-                    <summary>Raw formatted output</summary>
-                    <pre style={{ marginTop: '0.5rem', fontSize: '0.8rem', overflow: 'auto' }}>{formatted}</pre>
-                  </details>
-                )}
-              </div>
-            );
-          }
-          return (
-            <div key={`tool-${i}`} style={{ padding: '0.5rem', backgroundColor: '#f5f5f5', borderRadius: '4px', marginTop: '0.5rem', fontSize: '0.875rem' }}>
-              <strong>🔧 {p.toolName}</strong>
-              <div style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>state: {p.state}</div>
-              {'input' in p && p.input !== undefined && (
-                <pre style={{ marginTop: '0.5rem', fontSize: '0.75rem', overflow: 'auto' }}>{JSON.stringify(p.input, null, 2)}</pre>
-              )}
-              {'output' in p && p.output !== undefined && (
-                <pre style={{ marginTop: '0.5rem', fontSize: '0.75rem', overflow: 'auto' }}>{JSON.stringify(p.output, null, 2)}</pre>
-              )}
-              {'errorText' in p && p.errorText && (
-                <div style={{ color: '#c00', marginTop: '0.5rem' }}>{p.errorText}</div>
-              )}
-            </div>
-          );
-        }
-        // typed tool part, p.type = `tool-${name}`
-        const typed: any = p as any;
-        return (
-          <div key={`tool-${i}`} style={{ padding: '0.5rem', backgroundColor: '#f5f5f5', borderRadius: '4px', marginTop: '0.5rem', fontSize: '0.875rem' }}>
-            <strong>🔧 {typed.type.replace('tool-', '')}</strong>
-            <div style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>state: {typed.state}</div>
-            {typed.input !== undefined && (
-              <pre style={{ marginTop: '0.5rem', fontSize: '0.75rem', overflow: 'auto' }}>{JSON.stringify(typed.input, null, 2)}</pre>
-            )}
-            {typed.output !== undefined && (
-              <pre style={{ marginTop: '0.5rem', fontSize: '0.75rem', overflow: 'auto' }}>{JSON.stringify(typed.output, null, 2)}</pre>
-            )}
-            {typed.errorText && (
-              <div style={{ color: '#c00', marginTop: '0.5rem' }}>{typed.errorText}</div>
-            )}
-          </div>
-        );
-      });
-  };
+  // Intentionally do not render tool parts to users.
 
   const renderReasoningParts = (parts: any[]) => {
     return parts
@@ -172,9 +100,19 @@ export default function ChatPage() {
                 {message.role === 'user' ? 'You' : 'AI Assistant'}
               </div>
               <div style={{ whiteSpace: 'pre-wrap' }}>
-                {renderTextParts(message.parts as any[])}
+                {/* Render assistant text as Markdown with GFM */}
+                {(() => {
+                  const txt = (message.parts as any[])
+                    .filter((p) => p.type === 'text')
+                    .map((p) => p.text ?? '')
+                    .join('');
+                  return txt ? (
+                    <div className="markdown-body">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{txt}</ReactMarkdown>
+                    </div>
+                  ) : null;
+                })()}
                 {renderReasoningParts(message.parts as any[])}
-                {renderToolParts(message.parts as any[])}
                 {renderSourceParts(message.parts as any[])}
               </div>
             </div>
@@ -235,6 +173,16 @@ export default function ChatPage() {
           0%, 60%, 100% { opacity: 1; }
           30% { opacity: 0.4; }
         }
+        .markdown-body :global(h1) { font-size: 1.6rem; margin: 1rem 0 0.5rem; }
+        .markdown-body :global(h2) { font-size: 1.3rem; margin: 0.9rem 0 0.4rem; }
+        .markdown-body :global(h3) { font-size: 1.1rem; margin: 0.8rem 0 0.3rem; }
+        .markdown-body :global(p) { margin: 0.5rem 0; line-height: 1.6; }
+        .markdown-body :global(ul), .markdown-body :global(ol) { margin: 0.5rem 0 0.5rem 1.25rem; }
+        .markdown-body :global(li) { margin: 0.25rem 0; }
+        .markdown-body :global(code) { background: #f6f8fa; padding: 0.15rem 0.35rem; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.95em; }
+        .markdown-body :global(pre) { background: #0b0b0b; color: #e8e8e8; padding: 0.75rem; border-radius: 8px; overflow: auto; }
+        .markdown-body :global(blockquote) { border-left: 4px solid #ddd; padding-left: 0.75rem; color: #555; margin: 0.5rem 0; }
+        .markdown-body :global(a) { color: #1976d2; text-decoration: underline; }
       `}</style>
     </div>
   );

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { openai } from '@ai-sdk/openai';
-import { embed } from 'ai';
-import { supabaseServer, KbSearchResult } from '@/lib/supabase';
+import { KbSearchResult } from '@/lib/supabase';
+import { searchKb } from '@/lib/rag';
 
 // Force Node.js runtime for this route (needed for embeddings)
 export const runtime = 'nodejs';
@@ -18,33 +17,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate embedding for the query using OpenAI's text-embedding-3-small model
-    const { embedding } = await embed({
-      model: openai.textEmbeddingModel('text-embedding-3-small'),
-      value: query,
-    });
-
-    // Get Supabase client
-    const supabase = supabaseServer();
-
-    // Call the kb_search RPC function with the embedding
-    const { data, error } = await supabase
-      .rpc('kb_search', {
-        p_tenant: tenant,
-        p_query: `[${embedding.join(',')}]`,
-        p_match_count: 5,
-      });
-
-    if (error) {
-      console.error('Supabase RPC error:', error);
-      return NextResponse.json(
-        { error: 'Failed to search knowledge base', details: error.message },
-        { status: 500 }
-      );
-    }
-
-    // Type the results
-    const results = data as KbSearchResult[];
+    const results: KbSearchResult[] = await searchKb({ query, tenant, matchCount: 5 });
 
     // Return the search results
     return NextResponse.json({
