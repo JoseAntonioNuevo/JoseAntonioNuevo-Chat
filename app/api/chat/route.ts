@@ -13,7 +13,11 @@ export const runtime = 'nodejs';
 
 // CORS allowlist per tenant (placeholder)
 const ALLOWED_ORIGINS: Record<string, string[]> = {
-  jose: ['http://localhost:3000', 'http://localhost:3001'],
+  jose: [
+    'http://localhost:3000', 
+    'http://localhost:3001',
+    'https://chat.joseantonionuevo.tech'
+  ],
   // TODO: Add more tenant -> allowed origins mappings
 };
 
