@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useChat } from '@ai-sdk/react';
-import type { UIMessage, UIMessagePart } from 'ai';
+import type { UIMessage } from 'ai';
 
 export default function ChatPage() {
   const [sessionId, setSessionId] = useState<string>('');
@@ -36,7 +36,7 @@ export default function ChatPage() {
     return parts
       .filter((p) => p.type === 'text')
       .map((p, i) => (
-        <span key={i}>{'text' in p ? p.text : ''}</span>
+        <span key={`text-${i}`}>{p.text ?? ''}</span>
       ));
   };
 
@@ -45,6 +45,41 @@ export default function ChatPage() {
       .filter((p) => p.type === 'dynamic-tool' || p.type.startsWith('tool-'))
       .map((p, i) => {
         if (p.type === 'dynamic-tool') {
+          if (p.toolName === 'search_kb' && p.state === 'output-available') {
+            const out = p.output ?? {};
+            const results = Array.isArray(out?.results) ? out.results : [];
+            const formatted = typeof out?.formatted === 'string' ? out.formatted : '';
+            return (
+              <div key={`tool-${i}`} style={{ padding: '0.75rem', backgroundColor: '#eef7ff', borderRadius: '6px', marginTop: '0.75rem', border: '1px solid #cfe8ff' }}>
+                <strong>🔎 Knowledge Base Results</strong>
+                {results.length > 0 ? (
+                  <ul style={{ marginTop: '0.5rem', paddingLeft: '1rem' }}>
+                    {results.map((r: any, idx: number) => (
+                      <li key={idx} style={{ marginBottom: '0.5rem' }}>
+                        <div style={{ fontWeight: 600 }}>{r.title || 'Document'}</div>
+                        {'similarity' in r && (
+                          <div style={{ fontSize: '0.8rem', color: '#555' }}>Relevance: {((r.similarity || 0) * 100).toFixed(1)}%</div>
+                        )}
+                        {r.content && (
+                          <div style={{ fontSize: '0.9rem', color: '#333', marginTop: '0.25rem', whiteSpace: 'pre-wrap' }}>
+                            {String(r.content).slice(0, 500)}{String(r.content).length > 500 ? '…' : ''}
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div style={{ marginTop: '0.5rem' }}>No relevant documents found.</div>
+                )}
+                {formatted && (
+                  <details style={{ marginTop: '0.5rem' }}>
+                    <summary>Raw formatted output</summary>
+                    <pre style={{ marginTop: '0.5rem', fontSize: '0.8rem', overflow: 'auto' }}>{formatted}</pre>
+                  </details>
+                )}
+              </div>
+            );
+          }
           return (
             <div key={`tool-${i}`} style={{ padding: '0.5rem', backgroundColor: '#f5f5f5', borderRadius: '4px', marginTop: '0.5rem', fontSize: '0.875rem' }}>
               <strong>🔧 {p.toolName}</strong>
@@ -81,6 +116,30 @@ export default function ChatPage() {
       });
   };
 
+  const renderReasoningParts = (parts: any[]) => {
+    return parts
+      .filter((p) => p.type === 'reasoning')
+      .map((p, i) => (
+        <div key={`reason-${i}`} style={{ padding: '0.5rem', backgroundColor: '#fffaf0', border: '1px dashed #f0d9a6', color: '#6a591f', borderRadius: '6px', marginTop: '0.5rem', fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>
+          {p.text}
+        </div>
+      ));
+  };
+
+  const renderSourceParts = (parts: any[]) => {
+    return parts
+      .filter((p) => p.type === 'source-url' || p.type === 'source-document')
+      .map((p, i) => (
+        <div key={`src-${i}`} style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#555' }}>
+          {p.type === 'source-url' ? (
+            <span>Source: <a href={p.url} target="_blank" rel="noreferrer">{p.title || p.url}</a></span>
+          ) : (
+            <span>Source: {p.title}{p.filename ? ` (${p.filename})` : ''}</span>
+          )}
+        </div>
+      ));
+  };
+
   if (!isReady) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
@@ -114,7 +173,9 @@ export default function ChatPage() {
               </div>
               <div style={{ whiteSpace: 'pre-wrap' }}>
                 {renderTextParts(message.parts as any[])}
+                {renderReasoningParts(message.parts as any[])}
                 {renderToolParts(message.parts as any[])}
+                {renderSourceParts(message.parts as any[])}
               </div>
             </div>
           ))

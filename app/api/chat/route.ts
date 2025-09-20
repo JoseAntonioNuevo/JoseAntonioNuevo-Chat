@@ -3,11 +3,12 @@ import { openai } from '@ai-sdk/openai';
 import { streamText, tool, convertToCoreMessages } from 'ai';
 import { z } from 'zod';
 import type { KbSearchResult } from '@/lib/supabase';
+import { supabaseServer } from '@/lib/supabase';
 // Uncomment to enable rate limiting:
 // import { checkRateLimit } from '@/lib/ratelimit';
 
-// Force Edge runtime for this route
-export const runtime = 'edge';
+// Use Node runtime to support Supabase service role writes
+export const runtime = 'nodejs';
 
 // CORS allowlist per tenant (placeholder)
 const ALLOWED_ORIGINS: Record<string, string[]> = {
@@ -77,9 +78,9 @@ export async function POST(request: NextRequest) {
     console.log('DEBUG - Received request body:', JSON.stringify(body, null, 2));
     
     const { messages } = body;
-    // Use default values for tenant and sessionId
-    const tenant = 'jose';
-    const sessionId = body.sessionId || crypto.randomUUID();
+    // Use provided values when available
+    const tenant: string = body.tenant || 'jose';
+    const sessionId: string = body.sessionId || crypto.randomUUID();
 
     // Validate required parameters
     console.log('DEBUG - Parameters check:', { 
@@ -173,6 +174,44 @@ Session ID: ${sessionId}`;
     // Convert UI messages from the client to core model messages for the AI call
     const coreMessages = convertToCoreMessages(messages);
 
+    // Persist conversation + last user message
+    try {
+      const supabase = supabaseServer();
+      // Ensure conversation exists
+      let { data: conv } = await supabase
+        .from('conversations')
+        .select('*')
+        .eq('tenant', tenant)
+        .eq('session_id', sessionId)
+        .maybeSingle();
+      if (!conv) {
+        const ins = await supabase
+          .from('conversations')
+          .insert({ tenant, session_id: sessionId })
+          .select('*')
+          .single();
+        conv = ins.data;
+      }
+
+      // Extract text from last user message
+      const lastUser = [...messages].reverse().find((m: any) => m.role === 'user');
+      let userText = '';
+      if (lastUser?.parts && Array.isArray(lastUser.parts)) {
+        for (const p of lastUser.parts) if (p?.type === 'text') userText += p.text ?? '';
+      } else if (typeof lastUser?.content === 'string') {
+        userText = lastUser.content;
+      }
+      if (conv && userText) {
+        await supabase.from('messages').insert({
+          conversation_id: conv.id,
+          role: 'user',
+          content: userText,
+        });
+      }
+    } catch (e) {
+      console.warn('Non-blocking persistence error (user):', e);
+    }
+
     // Stream the AI response with tool calling
     const result = await streamText({
       model: openai(process.env.OPENAI_MODEL || 'gpt-4o-mini'),
@@ -206,6 +245,31 @@ Session ID: ${sessionId}`;
       originalMessages: messages,
       // Attach minimal message metadata (optional)
       messageMetadata: () => ({ sessionId, tenant }),
+      onFinish: async ({ responseMessage }) => {
+        try {
+          const supabase = supabaseServer();
+          const { data: conv } = await supabase
+            .from('conversations')
+            .select('id')
+            .eq('tenant', tenant)
+            .eq('session_id', sessionId)
+            .single();
+          if (!conv) return;
+          let assistantText = '';
+          if (responseMessage?.parts && Array.isArray(responseMessage.parts)) {
+            for (const p of responseMessage.parts) if (p?.type === 'text') assistantText += p.text ?? '';
+          }
+          if (assistantText) {
+            await supabase.from('messages').insert({
+              conversation_id: conv.id,
+              role: 'assistant',
+              content: assistantText,
+            });
+          }
+        } catch (e) {
+          console.warn('Non-blocking persistence error (assistant):', e);
+        }
+      },
     });
 
   } catch (error) {
