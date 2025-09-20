@@ -158,7 +158,7 @@ Session ID: ${sessionId}`;
 
     // Stream the AI response with tool calling
     const result = await streamText({
-      model: openai('gpt-4o-mini'),
+      model: openai(process.env.OPENAI_MODEL || 'gpt-4o-mini'),
       system: systemPrompt,
       messages,
       tools: {

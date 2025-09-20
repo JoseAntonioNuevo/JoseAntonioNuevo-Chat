@@ -33,7 +33,7 @@ export default function HomePage() {
       <div style={{ marginTop: '3rem', textAlign: 'left' }}>
         <h2>Features</h2>
         <ul style={{ lineHeight: 1.6 }}>
-          <li>🤖 Streaming AI responses with gpt-4o-mini</li>
+          <li>🤖 Streaming AI responses with {process.env.OPENAI_MODEL || 'gpt-4o-mini'}</li>
           <li>🔍 RAG search with Supabase pgvector</li>
           <li>🛠️ Tool calling for knowledge base search</li>
           <li>🌐 Embeddable widget for any website</li>
