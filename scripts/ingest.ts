@@ -1,4 +1,6 @@
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 
 // Load environment variables from .env.local (Next.js convention)
 dotenv.config({ path: '.env.local' });
@@ -6,102 +8,50 @@ import { openai } from '@ai-sdk/openai';
 import { embed, embedMany } from 'ai';
 import { supabaseServer, type KbDocument, type KbSearchResult } from '../lib/supabase';
 
-// Sample documents for Jose's portfolio/CV
-const SEED_DOCUMENTS = [
-  {
-    title: 'Professional Summary',
-    content: `Jose Antonio is a senior full-stack engineer with over 10 years of experience building scalable web applications.
-    Specializes in React, Next.js, Node.js, and cloud architectures. Strong background in AI/ML integration,
-    real-time systems, and microservices. Passionate about clean code, best practices, and mentoring junior developers.`,
-    source: 'cv',
-  },
-  {
-    title: 'Technical Skills',
-    content: `Programming Languages: JavaScript, TypeScript, Python, Go, Rust
-    Frontend: React, Next.js, Vue.js, Svelte, React Native, Flutter
-    Backend: Node.js, Express, NestJS, FastAPI, Django
-    Databases: PostgreSQL, MongoDB, Redis, Supabase, Firebase
-    Cloud: AWS, Google Cloud, Azure, Vercel, Netlify
-    AI/ML: OpenAI API, Langchain, Vector databases, RAG systems
-    DevOps: Docker, Kubernetes, CI/CD, Terraform, GitHub Actions`,
-    source: 'cv',
-  },
-  {
-    title: 'Work Experience - Senior Full-Stack Engineer at TechCorp',
-    content: `2021-Present: Leading a team of 5 engineers building a SaaS platform for enterprise clients.
-    - Architected microservices using Node.js and Kubernetes
-    - Implemented real-time collaboration features using WebSockets
-    - Reduced API response times by 60% through optimization
-    - Mentored junior developers and conducted code reviews
-    - Stack: Next.js, Node.js, PostgreSQL, Redis, AWS`,
-    source: 'cv',
-  },
-  {
-    title: 'Work Experience - Full-Stack Developer at StartupXYZ',
-    content: `2018-2021: Built MVP and scaled to 100k users as founding engineer.
-    - Developed React Native mobile app from scratch
-    - Designed RESTful APIs and GraphQL schemas
-    - Implemented payment processing with Stripe
-    - Set up CI/CD pipelines and monitoring
-    - Stack: React, React Native, Express, MongoDB, Heroku`,
-    source: 'cv',
-  },
-  {
-    title: 'Portfolio Project - AI-Powered Chat Platform',
-    content: `Built a multi-tenant chatbot platform with RAG capabilities using Next.js and Supabase.
-    Features include streaming responses, tool calling, vector search, and embeddable widgets.
-    The system processes thousands of messages daily with sub-second response times.
-    Tech stack: Next.js 14, Vercel AI SDK, OpenAI, Supabase with pgvector, Edge Runtime.
-    GitHub: github.com/joseantonio/ai-chat-platform`,
-    source: 'portfolio',
-  },
-  {
-    title: 'Portfolio Project - Real-time Collaboration Tool',
-    content: `Developed a Figma-like collaborative design tool with real-time cursors, canvas synchronization,
-    and version history. Supports unlimited users per canvas with conflict-free replicated data types (CRDTs).
-    Built with React, WebRTC, Y.js for CRDT, and Phoenix channels for real-time communication.
-    Live demo: collab-tool.example.com`,
-    source: 'portfolio',
-  },
-  {
-    title: 'Portfolio Project - E-commerce Marketplace',
-    content: `Created a full-featured marketplace with multi-vendor support, real-time inventory tracking,
-    and ML-powered product recommendations. Processes over $1M in monthly transactions.
-    Features: Payment splitting, dispute resolution, automated fulfillment, analytics dashboard.
-    Tech: Next.js, Stripe Connect, PostgreSQL, Redis, Elasticsearch, TensorFlow.js`,
-    source: 'portfolio',
-  },
-  {
-    title: 'Education',
-    content: `Master of Science in Computer Science - Stanford University (2016-2018)
-    Focus: Distributed Systems and Machine Learning
-    
-    Bachelor of Science in Software Engineering - MIT (2012-2016)
-    Graduated Magna Cum Laude, GPA: 3.9/4.0`,
-    source: 'cv',
-  },
-  {
-    title: 'Certifications & Awards',
-    content: `AWS Certified Solutions Architect - Professional
-    Google Cloud Professional Cloud Architect
-    Meta Certified React Developer
-    
-    Awards:
-    - Best Innovation Award at TechCorp Hackathon 2023
-    - Open Source Contributor of the Year 2022
-    - Speaker at React Summit 2023`,
-    source: 'cv',
-  },
-  {
-    title: 'Contact Information',
-    content: `Email: jose@example.com
-    LinkedIn: linkedin.com/in/joseantonio
-    GitHub: github.com/joseantonio
-    Portfolio: joseantonio.dev
-    Location: San Francisco, CA (Remote-friendly)`,
-    source: 'cv',
-  },
-];
+// Function to read documents from the docs folder
+function loadDocumentsFromFiles(): Array<{ title: string; content: string; source: string }> {
+  const docsDir = path.join(process.cwd(), 'docs');
+  
+  if (!fs.existsSync(docsDir)) {
+    console.log('❌ docs folder not found, using fallback placeholder data');
+    return [];
+  }
+
+  const documents: Array<{ title: string; content: string; source: string }> = [];
+  const files = fs.readdirSync(docsDir);
+
+  console.log(`📁 Found ${files.length} files in docs folder:`);
+  
+  files.forEach(file => {
+    if (file.endsWith('.md') || file.endsWith('.txt')) {
+      const filePath = path.join(docsDir, file);
+      const content = fs.readFileSync(filePath, 'utf-8');
+      
+      // Extract title from filename or first heading
+      let title = file.replace(/\.(md|txt)$/, '');
+      const firstLine = content.split('\n')[0];
+      if (firstLine.startsWith('#')) {
+        title = firstLine.replace(/^#+\s*/, '');
+      }
+      
+      // Convert filename to proper title case
+      title = title
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+
+      documents.push({
+        title,
+        content: content.trim(),
+        source: 'cv', // You can customize this based on file name or folder structure
+      });
+
+      console.log(`   ✅ ${file} -> "${title}"`);
+    }
+  });
+
+  return documents;
+}
 
 async function main() {
   console.log('🚀 Starting document ingestion for tenant: jose');
@@ -117,8 +67,15 @@ async function main() {
 
     console.log('📝 Preparing documents for embedding...');
     
+    // Load documents from files
+    const documents = loadDocumentsFromFiles();
+    
+    if (documents.length === 0) {
+      throw new Error('No documents found in docs folder. Please add .md or .txt files to the docs/ directory.');
+    }
+    
     // Extract content for embedding
-    const values = SEED_DOCUMENTS.map(doc => doc.content);
+    const values = documents.map(doc => doc.content);
 
     console.log('🤖 Generating embeddings with OpenAI...');
     
@@ -131,7 +88,7 @@ async function main() {
     console.log(`✅ Generated ${embeddings.length} embeddings`);
 
     // Prepare documents with embeddings for insertion
-    const documentsWithEmbeddings = SEED_DOCUMENTS.map((doc, index) => ({
+    const documentsWithEmbeddings = documents.map((doc, index) => ({
       tenant: 'jose',
       title: doc.title,
       content: doc.content,

@@ -27,7 +27,6 @@ function createSearchKbTool(tenant: string) {
       try {
         // Use the environment variable for internal API calls (Edge -> Node)
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-        console.log('DEBUG - RAG search tool:', { baseUrl, query, tenant });
 
         const response = await fetch(`${baseUrl}/api/rag/search`, {
           method: 'POST',
@@ -62,11 +61,6 @@ function createSearchKbTool(tenant: string) {
         };
       } catch (error) {
         console.error('Tool execution error:', error);
-        console.error('Error details:', {
-          message: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined,
-          name: error instanceof Error ? error.name : undefined,
-        });
         return {
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -153,11 +147,22 @@ export async function POST(request: NextRequest) {
     */
 
     // System prompt that defines the chatbot behavior
-    const systemPrompt = `You are a helpful AI assistant with access to a knowledge base.
-When users ask questions, you should search the knowledge base for relevant information.
-Always be helpful, accurate, and concise in your responses.
-If you find relevant information in the knowledge base, cite it appropriately.
-If the knowledge base doesn't contain relevant information, provide the best answer you can based on your general knowledge.
+    const systemPrompt = `You are a helpful AI assistant with access to a knowledge base about Jose Antonio Nuevo.
+
+CRITICAL: After using the search_kb tool, you MUST continue the conversation with a synthesized response. Do not end the conversation after tool execution.
+
+Your mandatory workflow is:
+1. Search the knowledge base using the search_kb tool when relevant
+2. Analyze the retrieved information carefully
+3. ALWAYS provide a comprehensive, synthesized response in natural language
+4. Extract key information and present it clearly and professionally
+
+For employment questions, organize companies chronologically and include:
+- Company name and role
+- Duration of employment
+- Key responsibilities or achievements
+
+Remember: You must ALWAYS respond with actual content after using tools. Never stop after tool execution.
 
 Tenant context: ${tenant}
 Session ID: ${sessionId}`;
@@ -170,6 +175,8 @@ Session ID: ${sessionId}`;
       tools: {
         search_kb: createSearchKbTool(tenant),
       },
+      maxToolRoundtrips: 2, // Allow the AI to continue after tool execution
+      toolChoice: 'auto', // Let AI decide when to use tools
       providerOptions: {
         openai: {
           user: sessionId, // Track usage per session
