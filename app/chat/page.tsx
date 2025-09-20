@@ -173,16 +173,19 @@ export default function ChatPage() {
           0%, 60%, 100% { opacity: 1; }
           30% { opacity: 0.4; }
         }
-        .markdown-body :global(h1) { font-size: 1.6rem; margin: 1rem 0 0.5rem; }
-        .markdown-body :global(h2) { font-size: 1.3rem; margin: 0.9rem 0 0.4rem; }
-        .markdown-body :global(h3) { font-size: 1.1rem; margin: 0.8rem 0 0.3rem; }
-        .markdown-body :global(p) { margin: 0.5rem 0; line-height: 1.6; }
-        .markdown-body :global(ul), .markdown-body :global(ol) { margin: 0.5rem 0 0.5rem 1.25rem; }
-        .markdown-body :global(li) { margin: 0.25rem 0; }
+        .markdown-body { line-height: 1.5; }
+        .markdown-body :global(h1) { font-size: 1.6rem; margin: 0.75rem 0 0.4rem; }
+        .markdown-body :global(h2) { font-size: 1.3rem; margin: 0.6rem 0 0.35rem; }
+        .markdown-body :global(h3) { font-size: 1.1rem; margin: 0.5rem 0 0.3rem; }
+        .markdown-body :global(p) { margin: 0.35rem 0; }
+        .markdown-body :global(ul), .markdown-body :global(ol) { margin: 0.35rem 0 0.35rem 1rem; }
+        .markdown-body :global(li) { margin: 0.2rem 0; }
         .markdown-body :global(code) { background: #f6f8fa; padding: 0.15rem 0.35rem; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.95em; }
-        .markdown-body :global(pre) { background: #0b0b0b; color: #e8e8e8; padding: 0.75rem; border-radius: 8px; overflow: auto; }
-        .markdown-body :global(blockquote) { border-left: 4px solid #ddd; padding-left: 0.75rem; color: #555; margin: 0.5rem 0; }
+        .markdown-body :global(pre) { background: #0b0b0b; color: #e8e8e8; padding: 0.6rem; border-radius: 8px; overflow: auto; margin: 0.5rem 0; }
+        .markdown-body :global(blockquote) { border-left: 4px solid #ddd; padding-left: 0.6rem; color: #555; margin: 0.35rem 0; }
         .markdown-body :global(a) { color: #1976d2; text-decoration: underline; }
+        .markdown-body :global(> :first-child) { margin-top: 0; }
+        .markdown-body :global(> :last-child) { margin-bottom: 0; }
       `}</style>
     </div>
   );
