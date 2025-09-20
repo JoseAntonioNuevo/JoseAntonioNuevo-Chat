@@ -8,8 +8,8 @@ import { supabaseServer } from '@/lib/supabase';
 // Uncomment to enable rate limiting:
 // import { checkRateLimit } from '@/lib/ratelimit';
 
-// Use Node runtime to support Supabase service role writes
-export const runtime = 'nodejs';
+// Use Edge runtime for reliable streaming in production
+export const runtime = 'edge';
 
 // CORS allowlist per tenant (placeholder)
 const ALLOWED_ORIGINS: Record<string, string[]> = {
@@ -214,6 +214,9 @@ Session ID: ${sessionId}`;
           'Access-Control-Allow-Origin': origin || '*',
           'Access-Control-Allow-Methods': 'POST, OPTIONS',
           'Access-Control-Allow-Headers': 'Content-Type, X-Stream-Protocol',
+          // Reduce proxy buffering/compression issues for streaming
+          'Content-Encoding': 'identity',
+          'X-Accel-Buffering': 'no',
         },
       });
     }
@@ -224,6 +227,9 @@ Session ID: ${sessionId}`;
         'Access-Control-Allow-Origin': origin || '*',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, X-Stream-Protocol',
+        // Reduce proxy buffering/compression issues for streaming
+        'Content-Encoding': 'identity',
+        'X-Accel-Buffering': 'no',
       },
       // Provide original UI messages so the client can maintain continuity
       originalMessages: messages,
@@ -283,7 +289,10 @@ export async function OPTIONS(request: NextRequest) {
     headers: {
       'Access-Control-Allow-Origin': origin || '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, X-Stream-Protocol',
+      // mirror streaming-friendly headers in preflight
+      'Content-Encoding': 'identity',
+      'X-Accel-Buffering': 'no',
     },
   });
 }
