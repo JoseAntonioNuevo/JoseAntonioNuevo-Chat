@@ -1,0 +1,10 @@
+html, body { height: 100%; }
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: radial-gradient(1200px 800px at 20% 0%, #221240 0%, #120a23 60%), #120a23;
+  color: #e6e1ff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
