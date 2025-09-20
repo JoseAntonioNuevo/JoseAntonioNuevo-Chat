@@ -122,7 +122,7 @@ export default function ChatPage() {
         fontFamily: "system-ui, -apple-system, sans-serif",
       }}
     >
-      <div className="flex flex-col items-center justify-center">
+      <div className="chat-header">
         <h1>José Antonio Nuevo Chatbot</h1>
         <p>Ask me anything about me or my work!</p>
       </div>
@@ -319,6 +319,26 @@ export default function ChatPage() {
         )}
       </form>
       <style jsx>{`
+        .chat-header {
+          text-align: center;
+          margin-bottom: 2rem;
+          padding: 1rem;
+        }
+        .chat-header h1 {
+          font-size: 2rem;
+          font-weight: 700;
+          margin: 0 0 0.5rem 0;
+          background: linear-gradient(135deg, #6d28d9, #7c3aed);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+        .chat-header p {
+          font-size: 1.1rem;
+          color: #b8aef0;
+          margin: 0;
+          opacity: 0.9;
+        }
         .pulse {
           width: 36px;
           height: 10px;
