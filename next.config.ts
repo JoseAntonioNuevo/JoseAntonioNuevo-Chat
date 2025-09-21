@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
     // Ensure correct workspace root when multiple lockfiles are present
     root: __dirname,
   },
+  webpack: (config) => {
+    config.externals = config.externals || [];
+    config.externals.push('socket.io-client');
+    return config;
+  },
   async headers() {
     return [
       {
