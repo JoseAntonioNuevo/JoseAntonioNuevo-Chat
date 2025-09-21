@@ -8,6 +8,18 @@ const nextConfig: NextConfig = {
   webpack: (config) => {
     config.externals = config.externals || [];
     config.externals.push('socket.io-client');
+    
+    // Handle Node.js polyfills for browser environment
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      dns: false,
+      child_process: false,
+      tls: false,
+      'mime-db': false,
+    };
+    
     return config;
   },
   async headers() {
