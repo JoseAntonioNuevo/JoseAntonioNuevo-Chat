@@ -147,7 +147,7 @@ export default function ChatPage() {
             </div>
           </div>
           <p className="text-lg text-slate-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Ask me anything about José Antonio's experience, skills, and projects!
+            Ask me anything about José Antonio&apos;s experience, skills, and projects!
           </p>
         </div>
 
