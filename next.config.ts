@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "frame-ancestors 'self' http://localhost:* https://joseantonionuevo.tech https://*.joseantonionuevo.tech https://*.netlify.app https://*.vercel.app;",
+            value: "frame-ancestors 'self' http://localhost:* https://joseantonionuevo.tech https://*.joseantonionuevo.tech https://webdevfactory.dev https://*.webdevfactory.dev https://*.netlify.app https://*.vercel.app;",
           },
           {
             key: 'Access-Control-Allow-Origin',
