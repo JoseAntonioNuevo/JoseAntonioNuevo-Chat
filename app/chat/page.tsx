@@ -86,9 +86,23 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (listRef.current) {
-      listRef.current.scrollTo({ top: listRef.current.scrollHeight });
+      listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
     }
   }, [chat.messages, chat.status]);
+
+  // Additional auto-scroll during streaming
+  useEffect(() => {
+    const scrollToBottom = () => {
+      if (listRef.current) {
+        listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
+      }
+    };
+
+    if (chat.status === 'streaming') {
+      const interval = setInterval(scrollToBottom, 100); // Scroll every 100ms during streaming
+      return () => clearInterval(interval);
+    }
+  }, [chat.status]);
 
   if (!isReady) {
     return (
